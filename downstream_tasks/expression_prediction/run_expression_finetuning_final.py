@@ -143,7 +143,7 @@ def _target_class_name(cfg: Any) -> str:
 
 def _is_expression_dataset_cfg(cfg: Any) -> bool:
     """True только для ExpressionDataset и его FixedDesc-варианта (Mode2 не подходит)."""
-    return _target_class_name(cfg) in ("ExpressionDataset", "ExpressionDatasetFixedDesc", "ExpressionDatasetTSSWindow")
+    return _target_class_name(cfg) in ("ExpressionDataset", "ExpressionDatasetFixedDesc", "ExpressionDatasetTSSWindow", "CsRNADatasetTSSWindow")
 
 
 def infer_global_n_keys_from_expression_datasets(
@@ -840,7 +840,7 @@ def main():
 
     # Post-training / validation / save
     if args.save_best:
-        best_model_path = str(Path(args.model_path) / 'model_best.pth')
+        best_model_path = str(Path(args.model_path) / 'model_best')
         if accelerator.is_main_process:
             alogger.info(f'Loading best saved model from {best_model_path}')
         trainer.load(best_model_path)

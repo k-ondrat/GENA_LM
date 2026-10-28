@@ -1,0 +1,499 @@
+# Полное дообучение full8192 на csRNA EPIC: 6 видов, train = всё, кроме valid-контигов.
+# Сгенерировано epic/gen_config.py. train-окон с учётом repeat: 1,010,151; iters 31568 при TBS 32.
+TASK_NAME: expression/epic_csrna_full
+HOME_PATH: ${oc.env:GENALM_HOME}
+MODEL_PATH_ROOT: ${HOME_PATH}/runs/${TASK_NAME}
+
+args_params:
+  _target_: builtins.dict
+  init_checkpoint: ${HOME_PATH}/checkpoints/full8192/full8192_best.bin
+  reset_lr: True
+  reset_optimizer: True
+  reset_iteration: True
+  resume: "20261019-174307/model_14000"
+  model_cfg: ./data/configs/L12-H768-A12-V32k-preln.json
+  model_cls: "downstream_tasks.expression_prediction.expression_model_final:ExpressionCounts"
+  model_path: ${MODEL_PATH_ROOT}
+  input_seq_len: 8192
+  optimizer: "AdamW"
+  lr: 3e-5
+  weight_decay: 1e-4
+  lr_scheduler: "constant_with_warmup"
+  num_warmup_steps: 1000
+  clip_grad_norm: 1
+  iters: 31568
+  log_interval: 100
+  valid_interval: 2000
+  save_interval: 5000
+  save_best: True
+  optimize_metric: "other_loss"
+  optimize_mode: "min"
+  early_stopping_patience: 10000000
+  data_n_workers: 8
+  seed: 45
+  gen_tokenizer: "AIRI-Institute/gena-lm-bert-base-t2t"
+  text_tokenizer: "Qwen/Qwen3-Embedding-0.6B"
+
+model_kwargs:          # = full8192.yaml, кроме weight (вариант A пилота)
+  _target_: builtins.dict
+  hf: True
+  hf_model_name: ${HOME_PATH}/models/moderngena_large_8192
+  hf_model_name_decoder: ${HOME_PATH}/models/decoderdp0.1
+  desc_model_name: "Qwen/Qwen3-Embedding-0.6B"
+  freeze_dna_encoder: false
+  loss_fct:
+    _target_: torch.nn.MSELoss
+    reduction: 'none'
+  activation:
+    _target_: torch.nn.Softplus
+  config:
+    _target_: builtins.dict
+  weight: 1.0
+
+shared_dataset_params:
+  gen_tokenizer: ${args_params.gen_tokenizer}
+  text_tokenizer: ${args_params.text_tokenizer}
+  text_max_seq_len: 510
+  bw: bw
+  num_before: 4096
+  gen_max_seq_len: 8192
+  token_len_for_fetch: 15
+  transform_targets_bw:
+    _target_: downstream_tasks.expression_prediction.expression_dataset_final.logtransform
+    pseudocount: 1
+  seed: ${args_params.seed}
+
+train_dataset_ASM119413v2_s00:
+  _target_: downstream_tasks.expression_prediction.csrna_dataset.CsRNADatasetTSSWindow
+  targets_path: ${HOME_PATH}/epic_train/ASM119413v2/file_mappings_ASM119413v2.csv
+  genome: ${HOME_PATH}/epic_data/ASM119413v2/genome/genome.fa
+  forward_intervals_path: ${HOME_PATH}/epic_train/ASM119413v2/intervals_full/ASM119413v2.train.forward.s00.tsv
+  reverse_intervals_path: ${HOME_PATH}/epic_train/ASM119413v2/intervals_full/ASM119413v2.train.reverse.s00.tsv
+  hash_prefix: ${HOME_PATH}/epic_train/cache/full/ASM119413v2
+  repeat_factor: 1
+
+train_dataset_ASM119413v2_s01:
+  _target_: downstream_tasks.expression_prediction.csrna_dataset.CsRNADatasetTSSWindow
+  targets_path: ${HOME_PATH}/epic_train/ASM119413v2/file_mappings_ASM119413v2.csv
+  genome: ${HOME_PATH}/epic_data/ASM119413v2/genome/genome.fa
+  forward_intervals_path: ${HOME_PATH}/epic_train/ASM119413v2/intervals_full/ASM119413v2.train.forward.s01.tsv
+  reverse_intervals_path: ${HOME_PATH}/epic_train/ASM119413v2/intervals_full/ASM119413v2.train.reverse.s01.tsv
+  hash_prefix: ${HOME_PATH}/epic_train/cache/full/ASM119413v2
+  repeat_factor: 1
+
+train_dataset_ASM119413v2_s02:
+  _target_: downstream_tasks.expression_prediction.csrna_dataset.CsRNADatasetTSSWindow
+  targets_path: ${HOME_PATH}/epic_train/ASM119413v2/file_mappings_ASM119413v2.csv
+  genome: ${HOME_PATH}/epic_data/ASM119413v2/genome/genome.fa
+  forward_intervals_path: ${HOME_PATH}/epic_train/ASM119413v2/intervals_full/ASM119413v2.train.forward.s02.tsv
+  reverse_intervals_path: ${HOME_PATH}/epic_train/ASM119413v2/intervals_full/ASM119413v2.train.reverse.s02.tsv
+  hash_prefix: ${HOME_PATH}/epic_train/cache/full/ASM119413v2
+  repeat_factor: 1
+
+train_dataset_ASM119413v2_s03:
+  _target_: downstream_tasks.expression_prediction.csrna_dataset.CsRNADatasetTSSWindow
+  targets_path: ${HOME_PATH}/epic_train/ASM119413v2/file_mappings_ASM119413v2.csv
+  genome: ${HOME_PATH}/epic_data/ASM119413v2/genome/genome.fa
+  forward_intervals_path: ${HOME_PATH}/epic_train/ASM119413v2/intervals_full/ASM119413v2.train.forward.s03.tsv
+  reverse_intervals_path: ${HOME_PATH}/epic_train/ASM119413v2/intervals_full/ASM119413v2.train.reverse.s03.tsv
+  hash_prefix: ${HOME_PATH}/epic_train/cache/full/ASM119413v2
+  repeat_factor: 1
+
+train_dataset_ASM119413v2_s04:
+  _target_: downstream_tasks.expression_prediction.csrna_dataset.CsRNADatasetTSSWindow
+  targets_path: ${HOME_PATH}/epic_train/ASM119413v2/file_mappings_ASM119413v2.csv
+  genome: ${HOME_PATH}/epic_data/ASM119413v2/genome/genome.fa
+  forward_intervals_path: ${HOME_PATH}/epic_train/ASM119413v2/intervals_full/ASM119413v2.train.forward.s04.tsv
+  reverse_intervals_path: ${HOME_PATH}/epic_train/ASM119413v2/intervals_full/ASM119413v2.train.reverse.s04.tsv
+  hash_prefix: ${HOME_PATH}/epic_train/cache/full/ASM119413v2
+  repeat_factor: 1
+
+train_dataset_ASM119413v2_s05:
+  _target_: downstream_tasks.expression_prediction.csrna_dataset.CsRNADatasetTSSWindow
+  targets_path: ${HOME_PATH}/epic_train/ASM119413v2/file_mappings_ASM119413v2.csv
+  genome: ${HOME_PATH}/epic_data/ASM119413v2/genome/genome.fa
+  forward_intervals_path: ${HOME_PATH}/epic_train/ASM119413v2/intervals_full/ASM119413v2.train.forward.s05.tsv
+  reverse_intervals_path: ${HOME_PATH}/epic_train/ASM119413v2/intervals_full/ASM119413v2.train.reverse.s05.tsv
+  hash_prefix: ${HOME_PATH}/epic_train/cache/full/ASM119413v2
+  repeat_factor: 1
+
+train_dataset_ASM119413v2_s06:
+  _target_: downstream_tasks.expression_prediction.csrna_dataset.CsRNADatasetTSSWindow
+  targets_path: ${HOME_PATH}/epic_train/ASM119413v2/file_mappings_ASM119413v2.csv
+  genome: ${HOME_PATH}/epic_data/ASM119413v2/genome/genome.fa
+  forward_intervals_path: ${HOME_PATH}/epic_train/ASM119413v2/intervals_full/ASM119413v2.train.forward.s06.tsv
+  reverse_intervals_path: ${HOME_PATH}/epic_train/ASM119413v2/intervals_full/ASM119413v2.train.reverse.s06.tsv
+  hash_prefix: ${HOME_PATH}/epic_train/cache/full/ASM119413v2
+  repeat_factor: 1
+
+train_dataset_ASM119413v2_s07:
+  _target_: downstream_tasks.expression_prediction.csrna_dataset.CsRNADatasetTSSWindow
+  targets_path: ${HOME_PATH}/epic_train/ASM119413v2/file_mappings_ASM119413v2.csv
+  genome: ${HOME_PATH}/epic_data/ASM119413v2/genome/genome.fa
+  forward_intervals_path: ${HOME_PATH}/epic_train/ASM119413v2/intervals_full/ASM119413v2.train.forward.s07.tsv
+  reverse_intervals_path: ${HOME_PATH}/epic_train/ASM119413v2/intervals_full/ASM119413v2.train.reverse.s07.tsv
+  hash_prefix: ${HOME_PATH}/epic_train/cache/full/ASM119413v2
+  repeat_factor: 1
+
+train_dataset_ASM119413v2_s08:
+  _target_: downstream_tasks.expression_prediction.csrna_dataset.CsRNADatasetTSSWindow
+  targets_path: ${HOME_PATH}/epic_train/ASM119413v2/file_mappings_ASM119413v2.csv
+  genome: ${HOME_PATH}/epic_data/ASM119413v2/genome/genome.fa
+  forward_intervals_path: ${HOME_PATH}/epic_train/ASM119413v2/intervals_full/ASM119413v2.train.forward.s08.tsv
+  reverse_intervals_path: ${HOME_PATH}/epic_train/ASM119413v2/intervals_full/ASM119413v2.train.reverse.s08.tsv
+  hash_prefix: ${HOME_PATH}/epic_train/cache/full/ASM119413v2
+  repeat_factor: 1
+
+train_dataset_ASM119413v2_s09:
+  _target_: downstream_tasks.expression_prediction.csrna_dataset.CsRNADatasetTSSWindow
+  targets_path: ${HOME_PATH}/epic_train/ASM119413v2/file_mappings_ASM119413v2.csv
+  genome: ${HOME_PATH}/epic_data/ASM119413v2/genome/genome.fa
+  forward_intervals_path: ${HOME_PATH}/epic_train/ASM119413v2/intervals_full/ASM119413v2.train.forward.s09.tsv
+  reverse_intervals_path: ${HOME_PATH}/epic_train/ASM119413v2/intervals_full/ASM119413v2.train.reverse.s09.tsv
+  hash_prefix: ${HOME_PATH}/epic_train/cache/full/ASM119413v2
+  repeat_factor: 1
+
+train_dataset_ASM119413v2_s10:
+  _target_: downstream_tasks.expression_prediction.csrna_dataset.CsRNADatasetTSSWindow
+  targets_path: ${HOME_PATH}/epic_train/ASM119413v2/file_mappings_ASM119413v2.csv
+  genome: ${HOME_PATH}/epic_data/ASM119413v2/genome/genome.fa
+  forward_intervals_path: ${HOME_PATH}/epic_train/ASM119413v2/intervals_full/ASM119413v2.train.forward.s10.tsv
+  reverse_intervals_path: ${HOME_PATH}/epic_train/ASM119413v2/intervals_full/ASM119413v2.train.reverse.s10.tsv
+  hash_prefix: ${HOME_PATH}/epic_train/cache/full/ASM119413v2
+  repeat_factor: 1
+
+train_dataset_ASM119413v2_s11:
+  _target_: downstream_tasks.expression_prediction.csrna_dataset.CsRNADatasetTSSWindow
+  targets_path: ${HOME_PATH}/epic_train/ASM119413v2/file_mappings_ASM119413v2.csv
+  genome: ${HOME_PATH}/epic_data/ASM119413v2/genome/genome.fa
+  forward_intervals_path: ${HOME_PATH}/epic_train/ASM119413v2/intervals_full/ASM119413v2.train.forward.s11.tsv
+  reverse_intervals_path: ${HOME_PATH}/epic_train/ASM119413v2/intervals_full/ASM119413v2.train.reverse.s11.tsv
+  hash_prefix: ${HOME_PATH}/epic_train/cache/full/ASM119413v2
+  repeat_factor: 1
+
+train_dataset_ASM119413v2_s12:
+  _target_: downstream_tasks.expression_prediction.csrna_dataset.CsRNADatasetTSSWindow
+  targets_path: ${HOME_PATH}/epic_train/ASM119413v2/file_mappings_ASM119413v2.csv
+  genome: ${HOME_PATH}/epic_data/ASM119413v2/genome/genome.fa
+  forward_intervals_path: ${HOME_PATH}/epic_train/ASM119413v2/intervals_full/ASM119413v2.train.forward.s12.tsv
+  reverse_intervals_path: ${HOME_PATH}/epic_train/ASM119413v2/intervals_full/ASM119413v2.train.reverse.s12.tsv
+  hash_prefix: ${HOME_PATH}/epic_train/cache/full/ASM119413v2
+  repeat_factor: 1
+
+train_dataset_ASM119413v2_s13:
+  _target_: downstream_tasks.expression_prediction.csrna_dataset.CsRNADatasetTSSWindow
+  targets_path: ${HOME_PATH}/epic_train/ASM119413v2/file_mappings_ASM119413v2.csv
+  genome: ${HOME_PATH}/epic_data/ASM119413v2/genome/genome.fa
+  forward_intervals_path: ${HOME_PATH}/epic_train/ASM119413v2/intervals_full/ASM119413v2.train.forward.s13.tsv
+  reverse_intervals_path: ${HOME_PATH}/epic_train/ASM119413v2/intervals_full/ASM119413v2.train.reverse.s13.tsv
+  hash_prefix: ${HOME_PATH}/epic_train/cache/full/ASM119413v2
+  repeat_factor: 1
+
+train_dataset_ASM119413v2_s14:
+  _target_: downstream_tasks.expression_prediction.csrna_dataset.CsRNADatasetTSSWindow
+  targets_path: ${HOME_PATH}/epic_train/ASM119413v2/file_mappings_ASM119413v2.csv
+  genome: ${HOME_PATH}/epic_data/ASM119413v2/genome/genome.fa
+  forward_intervals_path: ${HOME_PATH}/epic_train/ASM119413v2/intervals_full/ASM119413v2.train.forward.s14.tsv
+  reverse_intervals_path: ${HOME_PATH}/epic_train/ASM119413v2/intervals_full/ASM119413v2.train.reverse.s14.tsv
+  hash_prefix: ${HOME_PATH}/epic_train/cache/full/ASM119413v2
+  repeat_factor: 1
+
+train_dataset_ASM119413v2_s15:
+  _target_: downstream_tasks.expression_prediction.csrna_dataset.CsRNADatasetTSSWindow
+  targets_path: ${HOME_PATH}/epic_train/ASM119413v2/file_mappings_ASM119413v2.csv
+  genome: ${HOME_PATH}/epic_data/ASM119413v2/genome/genome.fa
+  forward_intervals_path: ${HOME_PATH}/epic_train/ASM119413v2/intervals_full/ASM119413v2.train.forward.s15.tsv
+  reverse_intervals_path: ${HOME_PATH}/epic_train/ASM119413v2/intervals_full/ASM119413v2.train.reverse.s15.tsv
+  hash_prefix: ${HOME_PATH}/epic_train/cache/full/ASM119413v2
+  repeat_factor: 1
+
+train_dataset_ASM119413v2_s16:
+  _target_: downstream_tasks.expression_prediction.csrna_dataset.CsRNADatasetTSSWindow
+  targets_path: ${HOME_PATH}/epic_train/ASM119413v2/file_mappings_ASM119413v2.csv
+  genome: ${HOME_PATH}/epic_data/ASM119413v2/genome/genome.fa
+  forward_intervals_path: ${HOME_PATH}/epic_train/ASM119413v2/intervals_full/ASM119413v2.train.forward.s16.tsv
+  reverse_intervals_path: ${HOME_PATH}/epic_train/ASM119413v2/intervals_full/ASM119413v2.train.reverse.s16.tsv
+  hash_prefix: ${HOME_PATH}/epic_train/cache/full/ASM119413v2
+  repeat_factor: 1
+
+valid_dataset_ASM119413v2:
+  _target_: downstream_tasks.expression_prediction.csrna_dataset.CsRNADatasetTSSWindow
+  targets_path: ${HOME_PATH}/epic_train/ASM119413v2/file_mappings_ASM119413v2.csv
+  genome: ${HOME_PATH}/epic_data/ASM119413v2/genome/genome.fa
+  forward_intervals_path: ${HOME_PATH}/epic_train/ASM119413v2/intervals_full/ASM119413v2.valid.forward.tsv
+  reverse_intervals_path: ${HOME_PATH}/epic_train/ASM119413v2/intervals_full/ASM119413v2.valid.reverse.tsv
+  hash_prefix: ${HOME_PATH}/epic_train/cache/full/ASM119413v2
+
+train_dataset_sSquSuc5_hap2_s00:
+  _target_: downstream_tasks.expression_prediction.csrna_dataset.CsRNADatasetTSSWindow
+  targets_path: ${HOME_PATH}/epic_train/sSquSuc5.hap2/file_mappings_sSquSuc5.hap2.csv
+  genome: ${HOME_PATH}/epic_data/sSquSuc5.hap2/genome/genome.fa
+  forward_intervals_path: ${HOME_PATH}/epic_train/sSquSuc5.hap2/intervals_full/sSquSuc5.hap2.train.forward.s00.tsv
+  reverse_intervals_path: ${HOME_PATH}/epic_train/sSquSuc5.hap2/intervals_full/sSquSuc5.hap2.train.reverse.s00.tsv
+  hash_prefix: ${HOME_PATH}/epic_train/cache/full/sSquSuc5.hap2
+  repeat_factor: 1
+
+train_dataset_sSquSuc5_hap2_s01:
+  _target_: downstream_tasks.expression_prediction.csrna_dataset.CsRNADatasetTSSWindow
+  targets_path: ${HOME_PATH}/epic_train/sSquSuc5.hap2/file_mappings_sSquSuc5.hap2.csv
+  genome: ${HOME_PATH}/epic_data/sSquSuc5.hap2/genome/genome.fa
+  forward_intervals_path: ${HOME_PATH}/epic_train/sSquSuc5.hap2/intervals_full/sSquSuc5.hap2.train.forward.s01.tsv
+  reverse_intervals_path: ${HOME_PATH}/epic_train/sSquSuc5.hap2/intervals_full/sSquSuc5.hap2.train.reverse.s01.tsv
+  hash_prefix: ${HOME_PATH}/epic_train/cache/full/sSquSuc5.hap2
+  repeat_factor: 1
+
+train_dataset_sSquSuc5_hap2_s02:
+  _target_: downstream_tasks.expression_prediction.csrna_dataset.CsRNADatasetTSSWindow
+  targets_path: ${HOME_PATH}/epic_train/sSquSuc5.hap2/file_mappings_sSquSuc5.hap2.csv
+  genome: ${HOME_PATH}/epic_data/sSquSuc5.hap2/genome/genome.fa
+  forward_intervals_path: ${HOME_PATH}/epic_train/sSquSuc5.hap2/intervals_full/sSquSuc5.hap2.train.forward.s02.tsv
+  reverse_intervals_path: ${HOME_PATH}/epic_train/sSquSuc5.hap2/intervals_full/sSquSuc5.hap2.train.reverse.s02.tsv
+  hash_prefix: ${HOME_PATH}/epic_train/cache/full/sSquSuc5.hap2
+  repeat_factor: 1
+
+train_dataset_sSquSuc5_hap2_s03:
+  _target_: downstream_tasks.expression_prediction.csrna_dataset.CsRNADatasetTSSWindow
+  targets_path: ${HOME_PATH}/epic_train/sSquSuc5.hap2/file_mappings_sSquSuc5.hap2.csv
+  genome: ${HOME_PATH}/epic_data/sSquSuc5.hap2/genome/genome.fa
+  forward_intervals_path: ${HOME_PATH}/epic_train/sSquSuc5.hap2/intervals_full/sSquSuc5.hap2.train.forward.s03.tsv
+  reverse_intervals_path: ${HOME_PATH}/epic_train/sSquSuc5.hap2/intervals_full/sSquSuc5.hap2.train.reverse.s03.tsv
+  hash_prefix: ${HOME_PATH}/epic_train/cache/full/sSquSuc5.hap2
+  repeat_factor: 1
+
+train_dataset_sSquSuc5_hap2_s04:
+  _target_: downstream_tasks.expression_prediction.csrna_dataset.CsRNADatasetTSSWindow
+  targets_path: ${HOME_PATH}/epic_train/sSquSuc5.hap2/file_mappings_sSquSuc5.hap2.csv
+  genome: ${HOME_PATH}/epic_data/sSquSuc5.hap2/genome/genome.fa
+  forward_intervals_path: ${HOME_PATH}/epic_train/sSquSuc5.hap2/intervals_full/sSquSuc5.hap2.train.forward.s04.tsv
+  reverse_intervals_path: ${HOME_PATH}/epic_train/sSquSuc5.hap2/intervals_full/sSquSuc5.hap2.train.reverse.s04.tsv
+  hash_prefix: ${HOME_PATH}/epic_train/cache/full/sSquSuc5.hap2
+  repeat_factor: 1
+
+train_dataset_sSquSuc5_hap2_s05:
+  _target_: downstream_tasks.expression_prediction.csrna_dataset.CsRNADatasetTSSWindow
+  targets_path: ${HOME_PATH}/epic_train/sSquSuc5.hap2/file_mappings_sSquSuc5.hap2.csv
+  genome: ${HOME_PATH}/epic_data/sSquSuc5.hap2/genome/genome.fa
+  forward_intervals_path: ${HOME_PATH}/epic_train/sSquSuc5.hap2/intervals_full/sSquSuc5.hap2.train.forward.s05.tsv
+  reverse_intervals_path: ${HOME_PATH}/epic_train/sSquSuc5.hap2/intervals_full/sSquSuc5.hap2.train.reverse.s05.tsv
+  hash_prefix: ${HOME_PATH}/epic_train/cache/full/sSquSuc5.hap2
+  repeat_factor: 1
+
+train_dataset_sSquSuc5_hap2_s06:
+  _target_: downstream_tasks.expression_prediction.csrna_dataset.CsRNADatasetTSSWindow
+  targets_path: ${HOME_PATH}/epic_train/sSquSuc5.hap2/file_mappings_sSquSuc5.hap2.csv
+  genome: ${HOME_PATH}/epic_data/sSquSuc5.hap2/genome/genome.fa
+  forward_intervals_path: ${HOME_PATH}/epic_train/sSquSuc5.hap2/intervals_full/sSquSuc5.hap2.train.forward.s06.tsv
+  reverse_intervals_path: ${HOME_PATH}/epic_train/sSquSuc5.hap2/intervals_full/sSquSuc5.hap2.train.reverse.s06.tsv
+  hash_prefix: ${HOME_PATH}/epic_train/cache/full/sSquSuc5.hap2
+  repeat_factor: 1
+
+train_dataset_sSquSuc5_hap2_s07:
+  _target_: downstream_tasks.expression_prediction.csrna_dataset.CsRNADatasetTSSWindow
+  targets_path: ${HOME_PATH}/epic_train/sSquSuc5.hap2/file_mappings_sSquSuc5.hap2.csv
+  genome: ${HOME_PATH}/epic_data/sSquSuc5.hap2/genome/genome.fa
+  forward_intervals_path: ${HOME_PATH}/epic_train/sSquSuc5.hap2/intervals_full/sSquSuc5.hap2.train.forward.s07.tsv
+  reverse_intervals_path: ${HOME_PATH}/epic_train/sSquSuc5.hap2/intervals_full/sSquSuc5.hap2.train.reverse.s07.tsv
+  hash_prefix: ${HOME_PATH}/epic_train/cache/full/sSquSuc5.hap2
+  repeat_factor: 1
+
+train_dataset_sSquSuc5_hap2_s08:
+  _target_: downstream_tasks.expression_prediction.csrna_dataset.CsRNADatasetTSSWindow
+  targets_path: ${HOME_PATH}/epic_train/sSquSuc5.hap2/file_mappings_sSquSuc5.hap2.csv
+  genome: ${HOME_PATH}/epic_data/sSquSuc5.hap2/genome/genome.fa
+  forward_intervals_path: ${HOME_PATH}/epic_train/sSquSuc5.hap2/intervals_full/sSquSuc5.hap2.train.forward.s08.tsv
+  reverse_intervals_path: ${HOME_PATH}/epic_train/sSquSuc5.hap2/intervals_full/sSquSuc5.hap2.train.reverse.s08.tsv
+  hash_prefix: ${HOME_PATH}/epic_train/cache/full/sSquSuc5.hap2
+  repeat_factor: 1
+
+train_dataset_sSquSuc5_hap2_s09:
+  _target_: downstream_tasks.expression_prediction.csrna_dataset.CsRNADatasetTSSWindow
+  targets_path: ${HOME_PATH}/epic_train/sSquSuc5.hap2/file_mappings_sSquSuc5.hap2.csv
+  genome: ${HOME_PATH}/epic_data/sSquSuc5.hap2/genome/genome.fa
+  forward_intervals_path: ${HOME_PATH}/epic_train/sSquSuc5.hap2/intervals_full/sSquSuc5.hap2.train.forward.s09.tsv
+  reverse_intervals_path: ${HOME_PATH}/epic_train/sSquSuc5.hap2/intervals_full/sSquSuc5.hap2.train.reverse.s09.tsv
+  hash_prefix: ${HOME_PATH}/epic_train/cache/full/sSquSuc5.hap2
+  repeat_factor: 1
+
+train_dataset_sSquSuc5_hap2_s10:
+  _target_: downstream_tasks.expression_prediction.csrna_dataset.CsRNADatasetTSSWindow
+  targets_path: ${HOME_PATH}/epic_train/sSquSuc5.hap2/file_mappings_sSquSuc5.hap2.csv
+  genome: ${HOME_PATH}/epic_data/sSquSuc5.hap2/genome/genome.fa
+  forward_intervals_path: ${HOME_PATH}/epic_train/sSquSuc5.hap2/intervals_full/sSquSuc5.hap2.train.forward.s10.tsv
+  reverse_intervals_path: ${HOME_PATH}/epic_train/sSquSuc5.hap2/intervals_full/sSquSuc5.hap2.train.reverse.s10.tsv
+  hash_prefix: ${HOME_PATH}/epic_train/cache/full/sSquSuc5.hap2
+  repeat_factor: 1
+
+train_dataset_sSquSuc5_hap2_s11:
+  _target_: downstream_tasks.expression_prediction.csrna_dataset.CsRNADatasetTSSWindow
+  targets_path: ${HOME_PATH}/epic_train/sSquSuc5.hap2/file_mappings_sSquSuc5.hap2.csv
+  genome: ${HOME_PATH}/epic_data/sSquSuc5.hap2/genome/genome.fa
+  forward_intervals_path: ${HOME_PATH}/epic_train/sSquSuc5.hap2/intervals_full/sSquSuc5.hap2.train.forward.s11.tsv
+  reverse_intervals_path: ${HOME_PATH}/epic_train/sSquSuc5.hap2/intervals_full/sSquSuc5.hap2.train.reverse.s11.tsv
+  hash_prefix: ${HOME_PATH}/epic_train/cache/full/sSquSuc5.hap2
+  repeat_factor: 1
+
+train_dataset_sSquSuc5_hap2_s12:
+  _target_: downstream_tasks.expression_prediction.csrna_dataset.CsRNADatasetTSSWindow
+  targets_path: ${HOME_PATH}/epic_train/sSquSuc5.hap2/file_mappings_sSquSuc5.hap2.csv
+  genome: ${HOME_PATH}/epic_data/sSquSuc5.hap2/genome/genome.fa
+  forward_intervals_path: ${HOME_PATH}/epic_train/sSquSuc5.hap2/intervals_full/sSquSuc5.hap2.train.forward.s12.tsv
+  reverse_intervals_path: ${HOME_PATH}/epic_train/sSquSuc5.hap2/intervals_full/sSquSuc5.hap2.train.reverse.s12.tsv
+  hash_prefix: ${HOME_PATH}/epic_train/cache/full/sSquSuc5.hap2
+  repeat_factor: 1
+
+train_dataset_sSquSuc5_hap2_s13:
+  _target_: downstream_tasks.expression_prediction.csrna_dataset.CsRNADatasetTSSWindow
+  targets_path: ${HOME_PATH}/epic_train/sSquSuc5.hap2/file_mappings_sSquSuc5.hap2.csv
+  genome: ${HOME_PATH}/epic_data/sSquSuc5.hap2/genome/genome.fa
+  forward_intervals_path: ${HOME_PATH}/epic_train/sSquSuc5.hap2/intervals_full/sSquSuc5.hap2.train.forward.s13.tsv
+  reverse_intervals_path: ${HOME_PATH}/epic_train/sSquSuc5.hap2/intervals_full/sSquSuc5.hap2.train.reverse.s13.tsv
+  hash_prefix: ${HOME_PATH}/epic_train/cache/full/sSquSuc5.hap2
+  repeat_factor: 1
+
+valid_dataset_sSquSuc5_hap2:
+  _target_: downstream_tasks.expression_prediction.csrna_dataset.CsRNADatasetTSSWindow
+  targets_path: ${HOME_PATH}/epic_train/sSquSuc5.hap2/file_mappings_sSquSuc5.hap2.csv
+  genome: ${HOME_PATH}/epic_data/sSquSuc5.hap2/genome/genome.fa
+  forward_intervals_path: ${HOME_PATH}/epic_train/sSquSuc5.hap2/intervals_full/sSquSuc5.hap2.valid.forward.tsv
+  reverse_intervals_path: ${HOME_PATH}/epic_train/sSquSuc5.hap2/intervals_full/sSquSuc5.hap2.valid.reverse.tsv
+  hash_prefix: ${HOME_PATH}/epic_train/cache/full/sSquSuc5.hap2
+
+train_dataset_Ofas_2_0_s00:
+  _target_: downstream_tasks.expression_prediction.csrna_dataset.CsRNADatasetTSSWindow
+  targets_path: ${HOME_PATH}/epic_train/Ofas_2.0/file_mappings_Ofas_2.0.csv
+  genome: ${HOME_PATH}/epic_data/Ofas_2.0/genome/genome.fa
+  forward_intervals_path: ${HOME_PATH}/epic_train/Ofas_2.0/intervals_full/Ofas_2.0.train.forward.s00.tsv
+  reverse_intervals_path: ${HOME_PATH}/epic_train/Ofas_2.0/intervals_full/Ofas_2.0.train.reverse.s00.tsv
+  hash_prefix: ${HOME_PATH}/epic_train/cache/full/Ofas_2.0
+  repeat_factor: 1
+
+train_dataset_Ofas_2_0_s01:
+  _target_: downstream_tasks.expression_prediction.csrna_dataset.CsRNADatasetTSSWindow
+  targets_path: ${HOME_PATH}/epic_train/Ofas_2.0/file_mappings_Ofas_2.0.csv
+  genome: ${HOME_PATH}/epic_data/Ofas_2.0/genome/genome.fa
+  forward_intervals_path: ${HOME_PATH}/epic_train/Ofas_2.0/intervals_full/Ofas_2.0.train.forward.s01.tsv
+  reverse_intervals_path: ${HOME_PATH}/epic_train/Ofas_2.0/intervals_full/Ofas_2.0.train.reverse.s01.tsv
+  hash_prefix: ${HOME_PATH}/epic_train/cache/full/Ofas_2.0
+  repeat_factor: 1
+
+train_dataset_Ofas_2_0_s02:
+  _target_: downstream_tasks.expression_prediction.csrna_dataset.CsRNADatasetTSSWindow
+  targets_path: ${HOME_PATH}/epic_train/Ofas_2.0/file_mappings_Ofas_2.0.csv
+  genome: ${HOME_PATH}/epic_data/Ofas_2.0/genome/genome.fa
+  forward_intervals_path: ${HOME_PATH}/epic_train/Ofas_2.0/intervals_full/Ofas_2.0.train.forward.s02.tsv
+  reverse_intervals_path: ${HOME_PATH}/epic_train/Ofas_2.0/intervals_full/Ofas_2.0.train.reverse.s02.tsv
+  hash_prefix: ${HOME_PATH}/epic_train/cache/full/Ofas_2.0
+  repeat_factor: 1
+
+train_dataset_Ofas_2_0_s03:
+  _target_: downstream_tasks.expression_prediction.csrna_dataset.CsRNADatasetTSSWindow
+  targets_path: ${HOME_PATH}/epic_train/Ofas_2.0/file_mappings_Ofas_2.0.csv
+  genome: ${HOME_PATH}/epic_data/Ofas_2.0/genome/genome.fa
+  forward_intervals_path: ${HOME_PATH}/epic_train/Ofas_2.0/intervals_full/Ofas_2.0.train.forward.s03.tsv
+  reverse_intervals_path: ${HOME_PATH}/epic_train/Ofas_2.0/intervals_full/Ofas_2.0.train.reverse.s03.tsv
+  hash_prefix: ${HOME_PATH}/epic_train/cache/full/Ofas_2.0
+  repeat_factor: 1
+
+train_dataset_Ofas_2_0_s04:
+  _target_: downstream_tasks.expression_prediction.csrna_dataset.CsRNADatasetTSSWindow
+  targets_path: ${HOME_PATH}/epic_train/Ofas_2.0/file_mappings_Ofas_2.0.csv
+  genome: ${HOME_PATH}/epic_data/Ofas_2.0/genome/genome.fa
+  forward_intervals_path: ${HOME_PATH}/epic_train/Ofas_2.0/intervals_full/Ofas_2.0.train.forward.s04.tsv
+  reverse_intervals_path: ${HOME_PATH}/epic_train/Ofas_2.0/intervals_full/Ofas_2.0.train.reverse.s04.tsv
+  hash_prefix: ${HOME_PATH}/epic_train/cache/full/Ofas_2.0
+  repeat_factor: 1
+
+valid_dataset_Ofas_2_0:
+  _target_: downstream_tasks.expression_prediction.csrna_dataset.CsRNADatasetTSSWindow
+  targets_path: ${HOME_PATH}/epic_train/Ofas_2.0/file_mappings_Ofas_2.0.csv
+  genome: ${HOME_PATH}/epic_data/Ofas_2.0/genome/genome.fa
+  forward_intervals_path: ${HOME_PATH}/epic_train/Ofas_2.0/intervals_full/Ofas_2.0.valid.forward.tsv
+  reverse_intervals_path: ${HOME_PATH}/epic_train/Ofas_2.0/intervals_full/Ofas_2.0.valid.reverse.tsv
+  hash_prefix: ${HOME_PATH}/epic_train/cache/full/Ofas_2.0
+
+train_dataset_cgigas_uk_roslin_v1_s00:
+  _target_: downstream_tasks.expression_prediction.csrna_dataset.CsRNADatasetTSSWindow
+  targets_path: ${HOME_PATH}/epic_train/cgigas_uk_roslin_v1/file_mappings_cgigas_uk_roslin_v1.csv
+  genome: ${HOME_PATH}/epic_data/cgigas_uk_roslin_v1/genome/genome.fa
+  forward_intervals_path: ${HOME_PATH}/epic_train/cgigas_uk_roslin_v1/intervals_full/cgigas_uk_roslin_v1.train.forward.s00.tsv
+  reverse_intervals_path: ${HOME_PATH}/epic_train/cgigas_uk_roslin_v1/intervals_full/cgigas_uk_roslin_v1.train.reverse.s00.tsv
+  hash_prefix: ${HOME_PATH}/epic_train/cache/full/cgigas_uk_roslin_v1
+  repeat_factor: 1
+
+train_dataset_cgigas_uk_roslin_v1_s01:
+  _target_: downstream_tasks.expression_prediction.csrna_dataset.CsRNADatasetTSSWindow
+  targets_path: ${HOME_PATH}/epic_train/cgigas_uk_roslin_v1/file_mappings_cgigas_uk_roslin_v1.csv
+  genome: ${HOME_PATH}/epic_data/cgigas_uk_roslin_v1/genome/genome.fa
+  forward_intervals_path: ${HOME_PATH}/epic_train/cgigas_uk_roslin_v1/intervals_full/cgigas_uk_roslin_v1.train.forward.s01.tsv
+  reverse_intervals_path: ${HOME_PATH}/epic_train/cgigas_uk_roslin_v1/intervals_full/cgigas_uk_roslin_v1.train.reverse.s01.tsv
+  hash_prefix: ${HOME_PATH}/epic_train/cache/full/cgigas_uk_roslin_v1
+  repeat_factor: 1
+
+train_dataset_cgigas_uk_roslin_v1_s02:
+  _target_: downstream_tasks.expression_prediction.csrna_dataset.CsRNADatasetTSSWindow
+  targets_path: ${HOME_PATH}/epic_train/cgigas_uk_roslin_v1/file_mappings_cgigas_uk_roslin_v1.csv
+  genome: ${HOME_PATH}/epic_data/cgigas_uk_roslin_v1/genome/genome.fa
+  forward_intervals_path: ${HOME_PATH}/epic_train/cgigas_uk_roslin_v1/intervals_full/cgigas_uk_roslin_v1.train.forward.s02.tsv
+  reverse_intervals_path: ${HOME_PATH}/epic_train/cgigas_uk_roslin_v1/intervals_full/cgigas_uk_roslin_v1.train.reverse.s02.tsv
+  hash_prefix: ${HOME_PATH}/epic_train/cache/full/cgigas_uk_roslin_v1
+  repeat_factor: 1
+
+valid_dataset_cgigas_uk_roslin_v1:
+  _target_: downstream_tasks.expression_prediction.csrna_dataset.CsRNADatasetTSSWindow
+  targets_path: ${HOME_PATH}/epic_train/cgigas_uk_roslin_v1/file_mappings_cgigas_uk_roslin_v1.csv
+  genome: ${HOME_PATH}/epic_data/cgigas_uk_roslin_v1/genome/genome.fa
+  forward_intervals_path: ${HOME_PATH}/epic_train/cgigas_uk_roslin_v1/intervals_full/cgigas_uk_roslin_v1.valid.forward.tsv
+  reverse_intervals_path: ${HOME_PATH}/epic_train/cgigas_uk_roslin_v1/intervals_full/cgigas_uk_roslin_v1.valid.reverse.tsv
+  hash_prefix: ${HOME_PATH}/epic_train/cache/full/cgigas_uk_roslin_v1
+
+train_dataset_ilPloInte3_2_s00:
+  _target_: downstream_tasks.expression_prediction.csrna_dataset.CsRNADatasetTSSWindow
+  targets_path: ${HOME_PATH}/epic_train/ilPloInte3.2/file_mappings_ilPloInte3.2.csv
+  genome: ${HOME_PATH}/epic_data/ilPloInte3.2/genome/genome.fa
+  forward_intervals_path: ${HOME_PATH}/epic_train/ilPloInte3.2/intervals_full/ilPloInte3.2.train.forward.s00.tsv
+  reverse_intervals_path: ${HOME_PATH}/epic_train/ilPloInte3.2/intervals_full/ilPloInte3.2.train.reverse.s00.tsv
+  hash_prefix: ${HOME_PATH}/epic_train/cache/full/ilPloInte3.2
+  repeat_factor: 1
+
+train_dataset_ilPloInte3_2_s01:
+  _target_: downstream_tasks.expression_prediction.csrna_dataset.CsRNADatasetTSSWindow
+  targets_path: ${HOME_PATH}/epic_train/ilPloInte3.2/file_mappings_ilPloInte3.2.csv
+  genome: ${HOME_PATH}/epic_data/ilPloInte3.2/genome/genome.fa
+  forward_intervals_path: ${HOME_PATH}/epic_train/ilPloInte3.2/intervals_full/ilPloInte3.2.train.forward.s01.tsv
+  reverse_intervals_path: ${HOME_PATH}/epic_train/ilPloInte3.2/intervals_full/ilPloInte3.2.train.reverse.s01.tsv
+  hash_prefix: ${HOME_PATH}/epic_train/cache/full/ilPloInte3.2
+  repeat_factor: 1
+
+valid_dataset_ilPloInte3_2:
+  _target_: downstream_tasks.expression_prediction.csrna_dataset.CsRNADatasetTSSWindow
+  targets_path: ${HOME_PATH}/epic_train/ilPloInte3.2/file_mappings_ilPloInte3.2.csv
+  genome: ${HOME_PATH}/epic_data/ilPloInte3.2/genome/genome.fa
+  forward_intervals_path: ${HOME_PATH}/epic_train/ilPloInte3.2/intervals_full/ilPloInte3.2.valid.forward.tsv
+  reverse_intervals_path: ${HOME_PATH}/epic_train/ilPloInte3.2/intervals_full/ilPloInte3.2.valid.reverse.tsv
+  hash_prefix: ${HOME_PATH}/epic_train/cache/full/ilPloInte3.2
+
+train_dataset_jaNemVect1_1_s00:
+  _target_: downstream_tasks.expression_prediction.csrna_dataset.CsRNADatasetTSSWindow
+  targets_path: ${HOME_PATH}/epic_train/jaNemVect1.1/file_mappings_jaNemVect1.1.csv
+  genome: ${HOME_PATH}/epic_data/jaNemVect1.1/genome/genome.fa
+  forward_intervals_path: ${HOME_PATH}/epic_train/jaNemVect1.1/intervals_full/jaNemVect1.1.train.forward.s00.tsv
+  reverse_intervals_path: ${HOME_PATH}/epic_train/jaNemVect1.1/intervals_full/jaNemVect1.1.train.reverse.s00.tsv
+  hash_prefix: ${HOME_PATH}/epic_train/cache/full/jaNemVect1.1
+  repeat_factor: 1
+
+train_dataset_jaNemVect1_1_s01:
+  _target_: downstream_tasks.expression_prediction.csrna_dataset.CsRNADatasetTSSWindow
+  targets_path: ${HOME_PATH}/epic_train/jaNemVect1.1/file_mappings_jaNemVect1.1.csv
+  genome: ${HOME_PATH}/epic_data/jaNemVect1.1/genome/genome.fa
+  forward_intervals_path: ${HOME_PATH}/epic_train/jaNemVect1.1/intervals_full/jaNemVect1.1.train.forward.s01.tsv
+  reverse_intervals_path: ${HOME_PATH}/epic_train/jaNemVect1.1/intervals_full/jaNemVect1.1.train.reverse.s01.tsv
+  hash_prefix: ${HOME_PATH}/epic_train/cache/full/jaNemVect1.1
+  repeat_factor: 1
+
+valid_dataset_jaNemVect1_1:
+  _target_: downstream_tasks.expression_prediction.csrna_dataset.CsRNADatasetTSSWindow
+  targets_path: ${HOME_PATH}/epic_train/jaNemVect1.1/file_mappings_jaNemVect1.1.csv
+  genome: ${HOME_PATH}/epic_data/jaNemVect1.1/genome/genome.fa
+  forward_intervals_path: ${HOME_PATH}/epic_train/jaNemVect1.1/intervals_full/jaNemVect1.1.valid.forward.tsv
+  reverse_intervals_path: ${HOME_PATH}/epic_train/jaNemVect1.1/intervals_full/jaNemVect1.1.valid.reverse.tsv
+  hash_prefix: ${HOME_PATH}/epic_train/cache/full/jaNemVect1.1

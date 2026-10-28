@@ -116,3 +116,20 @@ downstream_tasks/expression_prediction/configs/*minja*
 /downstream_tasks/expression_prediction/benchmarks/alphagenome_benchmark/**/checkpoint*.csv
 /downstream_tasks/expression_prediction/benchmarks/alphagenome_benchmark/**/*predictions*.csv
 /downstream_tasks/expression_prediction/benchmarks/gena_lm_benchmark/**/*predictions*.csv
+# EPIC: данные и результаты не коммитим
+*.npz
+*.npy
+*.h5
+*.bin
+*.pth
+*.bw
+*.bed.gz
+*.txt.gz
+*.fa
+*.fai
+runs/
+predictions/
+epic_train/
+epic_data/
+.ipynb_checkpoints/
+__pycache__/
