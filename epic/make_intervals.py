@@ -4,6 +4,8 @@
     python epic/make_intervals.py ASSEMBLY
     # полное обучение: в train всё, кроме valid-контигов; train порезан на шарды
     python epic/make_intervals.py ASSEMBLY --full
+    # то же, но только регулярные окна (при --full tss_ratio 0 означает «все TSS-окна»)
+    python epic/make_intervals.py ASSEMBLY --full --no-tss
 
 Окно = TSSWindow вокруг центра: num_before токенов выше и num_after ниже (~±24 т.п.н.).
 Центры:
@@ -36,6 +38,7 @@ p.add_argument("--step", type=int, default=25000)
 p.add_argument("--half", type=int, default=24000, help="полуширина окна в п.н. для доли разметки")
 p.add_argument("--min-labeled", type=float, default=0.2)
 p.add_argument("--tss-ratio", type=float, default=1.0, help="TSS-окон на одно регулярное; 0 = все")
+p.add_argument("--no-tss", action="store_true", help="только регулярные окна, без TSS-окон")
 p.add_argument("--min-count", type=int, default=3, help="минимум ридов (r1+r2) у TSS-центра")
 p.add_argument("--max-train", type=int, default=25000, help="потолок train на цепь и тип; 0 = без потолка")
 p.add_argument("--max-valid", type=int, default=250, help="потолок valid на цепь и тип (кривая loss)")
@@ -104,10 +107,12 @@ r = np.searchsorted(off, nz, "right") - 1
 top = pd.DataFrame({"c": t.c.to_numpy()[r], "st": t.st.to_numpy()[r],
                     "pos": t.s.to_numpy()[r] + nz - off[r], "v": vals[nz]})
 top = top[top.v >= a.min_count]
+if a.no_tss:
+    top = top.iloc[:0]
 top["bin"] = top.pos // 1000
 top = top.sort_values("v", ascending=False).drop_duplicates(["c", "st", "bin"])
 top["split"] = split_of(top.c)
-if a.tss_ratio > 0:
+if a.tss_ratio > 0 and len(top):
     top = pd.concat(g.head(int(round(a.tss_ratio * n_reg.get((sp, st), 0))))
                     for (sp, st), g in top.groupby(["split", "st"]))
 print("минимальный счётчик в отобранных TSS по сплиту/цепи:",
