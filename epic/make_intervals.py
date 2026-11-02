@@ -7,8 +7,9 @@
 
 Окно = TSSWindow вокруг центра: num_before токенов выше и num_after ниже (~±24 т.п.н.).
 Центры:
-  * регулярные: шаг --step по каждому контигу и цепи; окно берётся, если размечено
-    (покрыто template.train этой цепи) >= --min-labeled его длины;
+  * регулярные: шаг --step (~ полокна) по каждому контигу и цепи; окно берётся, если размечено
+    (покрыто template.train этой цепи) >= --min-labeled его части внутри контига;
+    случайный сдвиг окна при обучении делает датасет (CsRNAWindowDataset, max_shift), не этот скрипт;
   * сильные TSS: позиции с >= --min-count ридов, одна на бин 1 т.п.н., центр сдвинут на
     случайные ±--jitter; число — --tss-ratio на одно регулярное (0 = все).
 Сплит по контигам: случайные контиги (seed), пока не наберётся --valid-frac размеченной длины.
@@ -89,7 +90,10 @@ split_of = lambda c: np.where(pd.Series(c).isin(valid), "valid", "train")
 reg = []
 for (c, st), (s, e, _) in cov.items():
     x = np.arange(s.min(), e.max(), a.step)
-    frac = labeled(c, st, x - a.half, x + a.half) / (2 * a.half)
+    # доля разметки в той части окна, что лежит внутри контига (иначе у края и на коротких
+    # скаффолдах окно, размеченное целиком, давало < 20% и выбрасывалось)
+    lo, hi = np.maximum(x - a.half, 0), np.minimum(x + a.half, csize[c])
+    frac = labeled(c, st, lo, hi) / np.maximum(hi - lo, 1)
     reg.append(pd.DataFrame({"c": c, "st": st, "x": x[frac >= a.min_labeled], "kind": "regular"}))
 reg = pd.concat(reg, ignore_index=True)
 n_reg = reg.assign(split=split_of(reg.c)).groupby(["split", "st"]).size()

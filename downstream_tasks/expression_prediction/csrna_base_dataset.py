@@ -1,13 +1,14 @@
 """csRNA (EPIC) с побуквенными метками для нуклеотидной головы.
 
-CsRNABaseDatasetTSSWindow = CsRNADatasetTSSWindow + четыре поля на каждое основание окна
+CsRNABaseDatasetTSSWindow = CsRNAWindowDataset + четыре поля на каждое основание окна
 (в порядке чтения, как input_ids; для '-' это reverse complement):
   base_seq    (Lb,) long  — A,C,G,T,N = 0..4
   base_tok    (Lb,) long  — позиция токена в input_ids (CLS = 0, поэтому токены 1..L)
   base_labels (Lb,) float — число 5'-концов из bigWig (сырые счётчики, без log)
   base_mask   (Lb,) bool  — основание размечено (внутри интервалов bigWig)
 
-Кэши токенов и токенных сигналов — те же, что у CsRNADatasetTSSWindow (хэши не меняются).
+Кэши токенов и токенных сигналов — те же, что у CsRNAWindowDataset с тем же max_shift
+(при max_shift=0 — прежние кэши CsRNADatasetTSSWindow). Окно берётся со сдвигом win_lo.
 Метки по основаниям читаются из bigWig на лету, последовательность — из genome.fa.
 """
 import os
@@ -17,7 +18,7 @@ import pyBigWig
 import pysam
 import torch
 
-from downstream_tasks.expression_prediction.csrna_dataset import CsRNADatasetTSSWindow
+from downstream_tasks.expression_prediction.csrna_dataset import CsRNAWindowDataset
 
 LUT = np.full(256, 4, np.int64)
 for _i, _c in enumerate(b"ACGT"):
@@ -25,7 +26,7 @@ for _i, _c in enumerate(b"ACGT"):
 COMP = np.array([3, 2, 1, 0, 4], np.int64)
 
 
-class CsRNABaseDatasetTSSWindow(CsRNADatasetTSSWindow):
+class CsRNABaseDatasetTSSWindow(CsRNAWindowDataset):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -44,8 +45,8 @@ class CsRNABaseDatasetTSSWindow(CsRNADatasetTSSWindow):
     def __getitem__(self, idx):
         f = super().__getitem__(idx)
         g = self.h5_cache[self.genes.iloc[self.valid_indices[idx // self.n_cell_chunks]]["gene_id"]]
-        L = f["input_ids"].shape[1] - 2
-        starts, ends = np.asarray(g["starts"][:L]), np.asarray(g["ends"][:L])
+        L, lo = f["input_ids"].shape[1] - 2, f["win_lo"]   # окно = токены кэша [lo, lo + L)
+        starts, ends = np.asarray(g["starts"][lo:lo + L]), np.asarray(g["ends"][lo:lo + L])
         chrom, strand = g.attrs["chrom"], g.attrs["strand"]
         r0, r1 = (int(starts[0]), int(ends[L - 1])) if strand == "+" else (int(starts[L - 1]), int(ends[0]))
         lens = ends - starts

@@ -1,8 +1,12 @@
 """Конфиг полного дообучения на всех видах: по блоку на каждый train-шард, по valid-блоку на вид.
 
     python epic/gen_config.py [--name epic_csrna_full] [--iters 0] [--tbs 32] [--repeat A=2 ...]
+    # окна со случайным сдвигом: train из нового замощения, valid - прежние окна и кэши
+    python epic/gen_config.py --name epic_csrna_shift --sub intervals_shift --valid-sub intervals_full --max-shift 2048
 
-Берёт epic_train/<A>/intervals_full/ (make_intervals.py --full) и file_mappings_<A>.csv.
+Берёт epic_train/<A>/<sub>/ (make_intervals.py --full) и file_mappings_<A>.csv.
+Класс CsRNAWindowDataset: train со сдвигом ±max_shift токенов (random_shift), valid без сдвига
+(max_shift 0 -> те же окна и кэши, что у CsRNADatasetTSSWindow, valid loss сравним со старыми запусками).
 --iters 0 -> одна эпоха по train при заданном --tbs. Параметры модели и оптимизатора — как в пилоте A.
 """
 import argparse, glob, json, math, os, re
@@ -14,7 +18,9 @@ SPECIES = ["ASM119413v2", "sSquSuc5.hap2", "Ofas_2.0", "cgigas_uk_roslin_v1", "i
 p = argparse.ArgumentParser()
 p.add_argument("--name", default="epic_csrna_full")
 p.add_argument("--species", nargs="+", default=SPECIES)
-p.add_argument("--sub", default="intervals_full")
+p.add_argument("--sub", default="intervals_full", help="папка train-окон")
+p.add_argument("--valid-sub", default=None, help="папка valid-окон; по умолчанию = --sub")
+p.add_argument("--max-shift", type=int, default=0, help="сдвиг train-окна, токенов; 0 = без сдвига")
 p.add_argument("--tbs", type=int, default=32, help="эффективный батч (для расчёта эпохи)")
 p.add_argument("--iters", type=int, default=0, help="0 = одна эпоха")
 p.add_argument("--lr", default="3e-5")
@@ -24,6 +30,8 @@ p.add_argument("--save-interval", type=int, default=5000)
 p.add_argument("--repeat", nargs="*", default=[], help="апсемплинг вида: СБОРКА=k (по умолчанию 1)")
 a = p.parse_args()
 rep = dict((k, int(v)) for k, v in (x.split("=") for x in a.repeat))
+vsub = a.valid_sub or a.sub
+CLS = "downstream_tasks.expression_prediction.csrna_dataset.CsRNAWindowDataset"
 
 key = lambda A: re.sub(r"[^0-9A-Za-z]", "_", A)
 blocks, rows, total = [], [], 0
@@ -36,7 +44,9 @@ for A in a.species:
         tag = tag.group(1) if tag else "s00"
         blocks.append(f"""
 train_dataset_{key(A)}_{tag}:
-  _target_: downstream_tasks.expression_prediction.csrna_dataset.CsRNADatasetTSSWindow
+  _target_: {CLS}
+  max_shift: {a.max_shift}
+  random_shift: {a.max_shift > 0}
   targets_path: ${{HOME_PATH}}/epic_train/{A}/file_mappings_{A}.csv
   genome: ${{HOME_PATH}}/epic_data/{A}/genome/genome.fa
   forward_intervals_path: {f.replace(H, '${HOME_PATH}')}
@@ -46,11 +56,11 @@ train_dataset_{key(A)}_{tag}:
 """)
     blocks.append(f"""
 valid_dataset_{key(A)}:
-  _target_: downstream_tasks.expression_prediction.csrna_dataset.CsRNADatasetTSSWindow
+  _target_: {CLS}
   targets_path: ${{HOME_PATH}}/epic_train/{A}/file_mappings_{A}.csv
   genome: ${{HOME_PATH}}/epic_data/{A}/genome/genome.fa
-  forward_intervals_path: ${{HOME_PATH}}/epic_train/{A}/{a.sub}/{A}.valid.forward.tsv
-  reverse_intervals_path: ${{HOME_PATH}}/epic_train/{A}/{a.sub}/{A}.valid.reverse.tsv
+  forward_intervals_path: ${{HOME_PATH}}/epic_train/{A}/{vsub}/{A}.valid.forward.tsv
+  reverse_intervals_path: ${{HOME_PATH}}/epic_train/{A}/{vsub}/{A}.valid.reverse.tsv
   hash_prefix: ${{HOME_PATH}}/epic_train/cache/full/{A}
 """)
     n = s["train"] * rep.get(A, 1)
@@ -131,4 +141,5 @@ for A, n, r, nn, sh, v, vc in rows:
     print(f"{A:22s} {n:9,d} {r:6d} {nn:9,d} {nn / total:6.1%} {sh:6d} {v:6,d} {vc:7d}")
 n_tr = sum(r[1] for r in rows)
 print(f"\nвсего train-окон {n_tr:,} (с repeat {total:,}); блоков {len(blocks)}; iters {iters} при TBS {a.tbs}")
-print(f"кэш ≈ {n_tr * 0.2 / 1024:.0f} ГБ (~200 КБ/окно) | конфиг: {out}")
+kb = 200 * (8192 + 2 * a.max_shift) / 8192
+print(f"кэш train ≈ {n_tr * kb / 1024 ** 2:.0f} ГБ (~{kb:.0f} КБ/окно) | конфиг: {out}")
