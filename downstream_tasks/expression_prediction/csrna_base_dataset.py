@@ -27,6 +27,7 @@ COMP = np.array([3, 2, 1, 0, 4], np.int64)
 
 
 class CsRNABaseDatasetTSSWindow(CsRNAWindowDataset):
+    both_strands = False   # True: ещё base_labels_anti / base_mask_anti — противоположная цепь в том же порядке чтения
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -63,4 +64,14 @@ class CsRNABaseDatasetTSSWindow(CsRNAWindowDataset):
         f["base_tok"] = torch.from_numpy(np.repeat(np.arange(1, L + 1), lens))
         f["base_labels"] = torch.from_numpy(np.where(m, y, 0).astype(np.float32))
         f["base_mask"] = torch.from_numpy(np.ascontiguousarray(m))
+        if self.both_strands:
+            ya = np.asarray(bw["-" if strand == "+" else "+"].values(chrom, r0, r1, numpy=True), np.float32)
+            ya = ya[::-1] if strand == "-" else ya
+            ma = ~np.isnan(ya)
+            f["base_labels_anti"] = torch.from_numpy(np.where(ma, ya, 0).astype(np.float32))
+            f["base_mask_anti"] = torch.from_numpy(np.ascontiguousarray(ma))
         return f
+
+
+class CsRNAProfileDataset(CsRNABaseDatasetTSSWindow):
+    both_strands = True

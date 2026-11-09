@@ -468,7 +468,8 @@ def main():
         batch_dict['desc_attention_mask'] = torch.stack(desc_mask_batch, dim=0)  # (B, n_keys, L_text_max)
 
         # побуквенные поля CsRNABaseDatasetTSSWindow: (Lb,) -> (B, Lb_max)
-        for key, pv in (('base_seq', 4), ('base_tok', 0), ('base_labels', 0.0), ('base_mask', False)):
+        for key, pv in (('base_seq', 4), ('base_tok', 0), ('base_labels', 0.0), ('base_mask', False),
+                        ('base_labels_anti', 0.0), ('base_mask_anti', False)):
             if key in batch[0]:
                 lb = max(s[key].numel() for s in batch)
                 batch_dict[key] = torch.stack([_pad_1d(s[key], lb, pv) for s in batch], dim=0)
@@ -650,7 +651,7 @@ def main():
             'desc_input_ids': batch['desc_input_ids'], 
             'desc_attention_mask': batch['desc_attention_mask']
         }
-        for k in ('base_seq', 'base_tok', 'base_labels', 'base_mask'):
+        for k in ('base_seq', 'base_tok', 'base_labels', 'base_mask', 'base_labels_anti', 'base_mask_anti'):
             if k in batch:
                 result[k] = batch[k]
         return result
@@ -674,7 +675,7 @@ def main():
 
         data = {} 
         
-        for k in ["cls_loss", "other_loss", "multinomial_loss", "deviation_loss", "tok_loss"]:
+        for k in ["cls_loss", "other_loss", "multinomial_loss", "deviation_loss", "tok_loss", "prof_loss", "cnt_loss", "prof_gain"]:
             if k in output and output[k] is not None:
                 data[k] = output[k].detach().cpu()
 
@@ -709,9 +710,9 @@ def main():
     def make_metrics_fn(model_path, save_predictions=False):
         def metrics_fn(data):
             metrics = {}
-            for k in ["cls_loss", "other_loss", "multinomial_loss", "deviation_loss", "tok_loss"]:
+            for k in ["cls_loss", "other_loss", "multinomial_loss", "deviation_loss", "tok_loss", "prof_loss", "cnt_loss", "prof_gain"]:
                 if k in data and data[k] is not None:
-                    metrics[k] = torch.mean(data[k]).item()
+                    metrics[k] = torch.nanmean(data[k].float()).item()
             tpm_true = data['tpm_true']
             tpm_preds = data['tpm_preds']
             gene_id = data['gene_id']
