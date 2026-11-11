@@ -9,7 +9,7 @@ DIR - каталоги predict.py (<contig><strand>.npz). Для каждого 
 """
 import argparse, os
 import numpy as np, pandas as pd, pysam
-from scipy.stats import spearmanr
+from scipy.stats import pearsonr, rankdata
 
 H = os.environ["GENALM_HOME"]
 p = argparse.ArgumentParser()
@@ -98,7 +98,7 @@ def ap(pos, s):
 def score(name, s):
     s = np.round(s / (s.max() or 1), 5)
     pos = y > 0
-    rows.append((name, ap(pos, s), spearmanr(y[pos], s[pos])[0]))
+    rows.append((name, ap(pos, s), pearsonr(rankdata(s[pos], 'dense'), rankdata(y[pos], 'dense'))[0]))  # как скорер
 
 rows, d = [], norm(S["dinuc"])
 score("dinuc", d)

@@ -13,6 +13,8 @@ from pathlib import Path
 import numpy as np, pandas as pd, pyBigWig, torch, torch.nn as nn, torch.nn.functional as F
 from scipy.stats import spearmanr
 from sklearn.metrics import average_precision_score
+from lbq import lb, ranks, quant, n_test
+ALPHA = NREF = None
 
 H = Path(os.environ['GENALM_HOME'])
 LUT = np.full(256, 4, np.uint8)
@@ -165,15 +167,17 @@ def load_pred(d, c, st, n, key='track'):
         return v if st == '+' else v[::-1]
     return full(np.prod([z[k] for k in key.split('*')], 0)), full(z['tok'] if 'tok' in z.files else z['track'])
 
-def sub(x):  # как в сабмите: [0, 1], 5 знаков
+def sub(x):  # [0, 1], 5 знаков; при --alpha — rank^(-alpha) с рангом, масштабированным на N_test
+    if ALPHA: return quant(ranks(x, NREF), ALPHA)
     return np.round(x / x.max(), 5)
 
-def metrics(s, y):
-    pos = y > 0
-    return average_precision_score(pos, s), spearmanr(s[pos], y[pos])[0]
+def metrics(s, y):  # как на лидерборде (EPIC_scoring/scorer.py)
+    return lb(s, y)
 
 def cmd_eval(a):
+    global ALPHA, NREF
     pred = a.pred or H / f'predictions/{a.A}_valid_full'
+    ALPHA, NREF = a.alpha, n_test(a.A)
     data, dt, cnn = oriented(a.A, valid_contigs(a.A)), get_dinuc(a.A), load_cnn(a.A, a.tag)
     col = {k: [] for k in ('y', 'full', 'dn', 'tok', 'alloc', 'dnN', 'cnn', 'cnnN')}
     for (c, st), (s, lab) in data.items():
@@ -196,7 +200,7 @@ def cmd_eval(a):
     print(f'{"":22s} AUPRC   Spearman   позиций {len(y):,}, позитивов {np.mean(y > 0):.3%}')
     for k, s in S.items(): print(f'{k:22s} %.4f  %.4f' % metrics(sub(s), y), flush=True)
     for k, s in {'ORACLE_tok': C['tok'], 'ORACLE_tok×dinuc': C['tok'] * dn, 'FULL×ORACLE_alloc': C['alloc']}.items():
-        print(f'{k:22s} %.4f  %.4f' % metrics(s, y), flush=True)   # потолки, без округления
+        print(f'{k:22s} %.4f  %.4f' % metrics(quant(ranks(s, NREF), ALPHA or 0.6), y), flush=True)   # потолки
 
 
 # ---------- test → npy в порядке template.test ----------
@@ -223,4 +227,5 @@ if __name__ == '__main__':
     ap.add_argument('--tag', default='cnn'); ap.add_argument('--cond', action='store_true'); ap.add_argument('--tokenizer')
     ap.add_argument('--a', type=float, nargs='+', default=[1, 2])
     ap.add_argument('--key', default='track')   # ключ npz (или произведение ключей через '*')
+    ap.add_argument('--alpha', type=float)   # шкала rank^(-alpha) вместо x/max
     a = ap.parse_args(); globals()['cmd_' + a.cmd](a)
