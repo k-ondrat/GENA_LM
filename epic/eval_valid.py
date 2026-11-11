@@ -10,6 +10,7 @@ DIR - каталоги predict.py (<contig><strand>.npz). Для каждого 
 import argparse, os
 import numpy as np, pandas as pd, pysam
 from scipy.stats import pearsonr, rankdata
+from lbq import ranks, quant, n_test
 
 H = os.environ["GENALM_HOME"]
 p = argparse.ArgumentParser()
@@ -17,6 +18,7 @@ p.add_argument("assembly")
 p.add_argument("--pred", nargs="+", default=[], help="ИМЯ=КАТАЛОГ")
 p.add_argument("--w", nargs="+", type=float, default=[0.5, 1.0, 2.0])
 p.add_argument("--contig-list")
+p.add_argument("--alpha", type=float, help="шкала rank^(-alpha), как в сабмите (epic/lbq.py)")
 a = p.parse_args()
 A = a.assembly
 fp = f"{H}/epic_data/{A}/for_participants"
@@ -96,7 +98,7 @@ def ap(pos, s):
     return float(np.sum(np.diff(np.r_[0, tp / tp[-1]]) * tp / (tp + fp)))
 
 def score(name, s):
-    s = np.round(s / (s.max() or 1), 5)
+    s = quant(ranks(s, n_test(A)), a.alpha) if a.alpha else np.round(s / (s.max() or 1), 5)
     pos = y > 0
     rows.append((name, ap(pos, s), pearsonr(rankdata(s[pos], 'dense'), rankdata(y[pos], 'dense'))[0]))  # как скорер
 
