@@ -143,7 +143,7 @@ def _target_class_name(cfg: Any) -> str:
 
 def _is_expression_dataset_cfg(cfg: Any) -> bool:
     """True только для ExpressionDataset и его FixedDesc-варианта (Mode2 не подходит)."""
-    return _target_class_name(cfg) in ("ExpressionDataset", "ExpressionDatasetFixedDesc", "ExpressionDatasetTSSWindow", "CsRNADatasetTSSWindow", "CsRNABaseDatasetTSSWindow", "CsRNAWindowDataset")
+    return _target_class_name(cfg) in ("ExpressionDataset", "ExpressionDatasetFixedDesc", "ExpressionDatasetTSSWindow", "CsRNADatasetTSSWindow", "CsRNABaseDatasetTSSWindow", "CsRNAWindowDataset", "CsRNAProfileDataset")
 
 
 def infer_global_n_keys_from_expression_datasets(
